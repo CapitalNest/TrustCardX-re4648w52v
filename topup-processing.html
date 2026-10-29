@@ -57,7 +57,6 @@
             </div>
             <div class="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 border border-slate-200 text-xs text-slate-600">
                 <i class="fa-solid fa-shield-halved text-emerald-600"></i>
-                
             </div>
         </header>
 
@@ -65,41 +64,44 @@
         <main class="my-auto py-8">
             <div class="enterprise-card rounded-2xl p-6 sm:p-10 relative overflow-hidden border border-slate-200/80 max-w-xl mx-auto text-center space-y-6">
                 
-                <!-- ANIMATED SPINNER ICON -->
-                <div class="relative w-20 h-20 mx-auto flex items-center justify-center">
-                    <div class="absolute inset-0 rounded-full border-4 border-emerald-100 animate-pulse"></div>
-                    <div class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
-                    <div class="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-inner">
-                        <i class="fa-solid fa-arrows-rotate text-xl animate-spin" style="animation-duration: 3s;"></i>
+                <!-- STATE CONTAINER (Swaps dynamically between Processing and Error) -->
+                <div id="cardContent" class="space-y-6">
+                    <!-- ANIMATED SPINNER ICON -->
+                    <div id="iconWrapper" class="relative w-20 h-20 mx-auto flex items-center justify-center">
+                        <div class="absolute inset-0 rounded-full border-4 border-emerald-100 animate-pulse"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+                        <div class="h-10 w-10 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600 shadow-inner">
+                            <i class="fa-solid fa-arrows-rotate text-xl animate-spin" style="animation-duration: 3s;"></i>
+                        </div>
                     </div>
-                </div>
 
-                <!-- TITLE & DESCRIPTION -->
-                <div class="space-y-2">
-                    <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
-                        Processing Top-Up Verification
-                    </h1>
-                    <p class="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
-                        Your gift card code has been securely transmitted. This verification process can take up to <strong>10 to 60 minutes</strong> to complete.
-                    </p>
-                </div>
+                    <!-- TITLE & DESCRIPTION -->
+                    <div class="space-y-2">
+                        <h1 id="mainTitle" class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+                            Processing Top-Up Verification
+                        </h1>
+                        <p id="mainDescription" class="text-xs sm:text-sm text-slate-500 leading-relaxed max-w-md mx-auto">
+                            Your gift card code has been securely transmitted. This verification process can take up to <strong>10 to 60 minutes</strong> to complete.
+                        </p>
+                    </div>
 
-                <!-- INFO NOTICE BOX -->
-                <div class="bg-slate-50 rounded-xl p-4 border border-slate-200/90 text-left text-xs sm:text-sm text-slate-700 space-y-2">
-                    <p class="font-bold flex items-center gap-1.5 text-slate-900">
-                        <i class="fa-solid fa-circle-info text-emerald-600"></i>
-                        What happens next?
-                    </p>
-                    <p class="text-slate-600 leading-relaxed">
-                        Once processed, your gift card will be successfully activated, unlocked for your specific location, and the added top-up value will be credited directly to your total account balance.
-                    </p>
-                </div>
+                    <!-- INFO NOTICE BOX -->
+                    <div id="infoBox" class="bg-slate-50 rounded-xl p-4 border border-slate-200/90 text-left text-xs sm:text-sm text-slate-700 space-y-2">
+                        <p class="font-bold flex items-center gap-1.5 text-slate-900">
+                            <i class="fa-solid fa-circle-info text-emerald-600"></i>
+                            What happens next?
+                        </p>
+                        <p class="text-slate-600 leading-relaxed">
+                            Once processed, your gift card will be successfully activated, unlocked for your specific location, and the added top-up value will be credited directly to your total account balance.
+                        </p>
+                    </div>
 
-                <!-- LIVE TIMER DISPLAY -->
-                <div class="pt-2">
-                    <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-semibold">
-                        <i class="fa-regular fa-clock text-emerald-600"></i>
-                        <span>Estimated Time: <strong id="countdownTime" class="font-mono">1 hour</strong></span>
+                    <!-- LIVE TIMER DISPLAY / ACTION BUTTON -->
+                    <div class="pt-2" id="bottomActionContainer">
+                        <div class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs sm:text-sm font-semibold">
+                            <i class="fa-regular fa-clock text-emerald-600"></i>
+                            <span>Estimated Time: <strong id="countdownime" class="font-mono">1 hour</strong></span>
+                        </div>
                     </div>
                 </div>
 
@@ -110,22 +112,26 @@
         <footer class="shrink-0 py-4 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-2">
             <p>&copy; 2026 TrustCardX. All rights reserved.</p>
             <div class="flex items-center gap-4">
-                <span class="flex items-center gap-1 text-emerald-600 font-medium">
-                    
-                </span>
+                <span class="flex items-center gap-1 text-emerald-600 font-medium"></span>
             </div>
         </footer>
 
     </div>
 
     <script>
-        // 60 minutes in total seconds
+        // ==========================================
+        // TESTING MODE SWITCH CONFIGURATION
+        // Change 'S' to 'V' to instantly test the 
+        // 10/10 professional error screen state.
+        // ==========================================
+        const TEST_MODE_TRIGGER = 'S'; 
+
+        // 60 minutes in total seconds (1 Hour)
         const TOTAL_DURATION = 60 * 60; 
         const STORAGE_KEY = 'trustcardx_processing_start';
 
         let startTime = localStorage.getItem(STORAGE_KEY);
 
-        // If no timer exists or user arrived fresh, set the start time to now
         if (!startTime) {
             startTime = Date.now();
             localStorage.setItem(STORAGE_KEY, startTime);
@@ -133,26 +139,75 @@
             startTime = parseInt(startTime, 10);
         }
 
+        function triggerErrorState() {
+            // Transform the card cleanly into a 10/10 Professional Error View
+            const iconWrapper = document.getElementById('iconWrapper');
+            const mainTitle = document.getElementById('mainTitle');
+            const mainDescription = document.getElementById('mainDescription');
+            const infoBox = document.getElementById('infoBox');
+            const bottomActionContainer = document.getElementById('bottomActionContainer');
+
+            // Replace spinner with an elegant error indicator badge
+            iconWrapper.innerHTML = `
+                <div class="absolute inset-0 rounded-full border-4 border-rose-100"></div>
+                <div class="h-12 w-12 rounded-full bg-rose-50 flex items-center justify-center text-rose-600 shadow-inner">
+                    <i class="fa-solid fa-triangle-exclamation text-2xl"></i>
+                </div>
+            `;
+
+            mainTitle.innerText = "Reactivation Failed";
+            mainTitle.className = "text-xl sm:text-2xl font-bold text-slate-900 tracking-tight";
+
+            mainDescription.innerHTML = "We were unable to complete the gift card verification and reactivation process.";
+
+            infoBox.className = "bg-rose-50/50 rounded-xl p-4 border border-rose-200/90 text-left text-xs sm:text-sm text-slate-700 space-y-2.5";
+            infoBox.innerHTML = `
+                <p class="font-bold flex items-center gap-1.5 text-rose-900">
+                    <i class="fa-solid fa-circle-exclamation text-rose-600"></i>
+                    Verification Notice
+                </p>
+                <p class="text-slate-600 leading-relaxed">
+                    This typically occurs because the gift card code is <strong>invalid</strong>, has already been <strong>used</strong>, the original buyer attempted a direct account top-up, or the transaction buyer has been <strong>refunded</strong>.
+                </p>
+            `;
+
+            // Replace countdown with a high-conversion professional "Try Again" button
+            bottomActionContainer.innerHTML = `
+                <a href="giftcardtopup.html" onclick="localStorage.removeItem('${STORAGE_KEY}');" class="w-full inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-semibold shadow-sm transition-all duration-200">
+                    <i class="fa-solid fa-rotate-left"></i>
+                    <span>Try Again</span>
+                </a>
+            `;
+        }
+
         function updateCountdown() {
+            // Immediate check for developer test switch ('V')
+            if (TEST_MODE_TRIGGER === 'V') {
+                triggerErrorState();
+                return;
+            }
+
             const now = Date.now();
             const elapsedSeconds = Math.floor((now - startTime) / 1000);
             const remainingSeconds = TOTAL_DURATION - elapsedSeconds;
 
             if (remainingSeconds <= 0) {
-                // Time's up: Clear storage and redirect back to top-up page
-                localStorage.removeItem(STORAGE_KEY);
-                window.location.href = 'giftcardtopup.html';
+                // Time's up: Render professional error state
+                triggerErrorState();
                 return;
             }
 
             const minutes = Math.floor(remainingSeconds / 60);
             const seconds = remainingSeconds % 60;
 
-            // Format as MM:SS with leading zeros
             const formattedMinutes = String(minutes).padStart(2, '0');
             const formattedSeconds = String(seconds).padStart(2, '0');
 
-            document.getElementById('countdownTimer').innerText = `${formattedMinutes}:${formattedSeconds}`;
+            const countdownElem = document.getElementById('countdownTime');
+            if (countdownElem) {
+                // Display countdown down to the exact MM:SS remaining
+                countdownElem.innerText = `${formattedMinutes}:${formattedSeconds}`;
+            }
         }
 
         // Run immediately and update every second
