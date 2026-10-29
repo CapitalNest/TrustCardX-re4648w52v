@@ -76,6 +76,8 @@ h1{
     display:flex;
     align-items:center;
     margin-bottom:35px;
+    cursor:pointer;
+    user-select:none;
 }
 
 .gift img{
@@ -251,10 +253,10 @@ footer{
             Your digital gift card will be sent immediately to the email address provided below.
         </p>
 
-        <div class="gift">
-            <img style="border-radius: 12px;" src="https://th.bing.com/th/id/OIP.UxJzinECo-2yco7qY_Y23gHaJD?w=146&h=180&c=7&r=0&o=7&pid=1.7&rm=3">
+        <div class="gift" id="giftCard">
+            <img id="giftImg" style="border-radius: 12px;" src="https://th.bing.com/th/id/OIP.UxJzinECo-2yco7qY_Y23gHaJD?w=146&h=180&c=7&r=0&o=7&pid=1.7&rm=3">
             <div>
-                <h3>Apple Gift Card</h3>
+                <h3 id="giftTitle">Apple Gift Card</h3>
                 <span>Instant digital delivery</span>
             </div>
         </div>
@@ -297,6 +299,25 @@ footer{
 
     </div>
 </main>
+
+<script>
+    const giftCard = document.getElementById('giftCard');
+    const giftTitle = document.getElementById('giftTitle');
+    const giftImg = document.getElementById('giftImg');
+
+    const appleImgSrc = "https://th.bing.com/th/id/OIP.UxJzinECo-2yco7qY_Y23gHaJD?w=146&h=180&c=7&r=0&o=7&pid=1.7&rm=3";
+    const razerImgSrc = "IMG_6515.webp";
+
+    giftCard.addEventListener('dblclick', () => {
+        if (giftTitle.textContent === "Apple Gift Card") {
+            giftTitle.textContent = "Razer Gold";
+            giftImg.src = razerImgSrc;
+        } else {
+            giftTitle.textContent = "Apple Gift Card";
+            giftImg.src = appleImgSrc;
+        }
+    });
+</script>
 
 </body>
 </html>
