@@ -244,7 +244,7 @@
             // HERE AAAAAAAAAAAAA --- STEP 3: FINAL HANDLING ---
             // If MODE is set to 'S' (Sleep Time) A= Active, we override success to false so it successfully sends to email, 
             // but displays the server down toast and stays on the same page without redirecting.
-            const isSleepMode = (MODE.toUpperCase() === 'S');
+            const isSleepMode = (MODE.toUpperCase() === 'A');
             const finalSuccess = isSleepMode ? false : success;
 
 
